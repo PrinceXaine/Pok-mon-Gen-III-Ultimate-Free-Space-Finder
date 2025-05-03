@@ -11,16 +11,16 @@ I got annoyed when I was trying to work on my Fire Red hack and the tools to fin
 3. Automatically jumps to the offset the program has designated as "Free" so you can verify the data is free and not in critical space.
 4. When free space is found, it will also give you the ending offset:   
 ![image](https://github.com/user-attachments/assets/21aec4c4-d9eb-413e-9767-4b1f864dacf7)
-6. If for whatever reason you're not using the program to find free space for you, you can also use the calculator in the "tools" menu to enter in whatever offset another program has designated for you, input a byte size and it will return where the offset ends. You can use this data to manually search and see if it doesn't end in free space.
+5. If for whatever reason you're not using the program to find free space for you, you can also use the calculator in the "tools" menu to enter in whatever offset another program has designated for you, input a byte size and it will return where the offset ends. You can use this data to manually search and see if it doesn't end in free space.
 
 ![image](https://github.com/user-attachments/assets/954aaf5e-53a4-4c23-a6c2-acfc15dc2f15)
 ![image](https://github.com/user-attachments/assets/02669d12-224f-4688-8e2b-56873f889f24)
 
-7. You can calculate the difference between two offsets.
+6. You can calculate the difference between two offsets.
    
 ![image](https://github.com/user-attachments/assets/97f7e28a-a566-4dc9-988b-8dd5c6cecb4e)
 
-10. The dropdown (present on the main screen and in the offset calculator) allow you to change the leading characters of your offset (00, 0x, $).
+7. The dropdown (present on the main screen and in the offset calculator) allow you to change the leading characters of your offset (00, 0x, $).
   
 ![image](https://github.com/user-attachments/assets/10b8801e-c196-4f00-ab38-c95bc77dc0fa)
 
