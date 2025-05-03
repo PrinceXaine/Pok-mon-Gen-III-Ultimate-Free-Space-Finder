@@ -188,7 +188,7 @@ def update_rom_data_from_hex_editor():
     except Exception as e:
         messagebox.showerror("Error", f"Failed to update ROM data from editor:\n{e}")
 
-# Add this function for highlight management
+# Highlight management
 def highlight_byte(offset):
     """Highlight the byte at the specified offset"""
     if not rom_data or offset >= len(rom_data):
@@ -1124,7 +1124,7 @@ root = tk.Tk()
 root.title("Pokémon Gen III Ultimate Free Space Finder")
 root.geometry("700x750")
 
-# Format and offset variables - add these right after the Core data variables
+# Format and offset variables
 offset_format_var = tk.StringVar(value="0x")
 start_offset_var = tk.StringVar(value="0")
 search_offset_var = tk.StringVar(value="0")
@@ -1167,10 +1167,9 @@ hex_frame.pack(fill='both', expand=True, padx=10, pady=10)
 # Hex editor with line numbers
 hex_line_numbers = tk.Text(hex_frame, width=8, padx=5, takefocus=0, border=0, background='lightgray', state='disabled')
 hex_line_numbers.pack(side='left', fill='y')
-
-# 1. Add this right after creating hex_display (in the HEX EDITOR TAB section)
 hex_display = tk.Text(hex_frame, wrap=tk.NONE, width=70)
 hex_display.pack(side='left', fill='both', expand=True)
+
 # Configure highlight tag during initialization
 hex_display.tag_configure("highlight", background="#ffff00", foreground="#000000")
 
