@@ -70,4 +70,4 @@ Script Editor Features:
 2. Bugfixes
 
 # User Notice:
-1. Please note that this tool was built for Pokémon Fire Red, but should work fine for just about any other application (except the script editor).
+1. Please note that this tool was built for Pokémon Fire Red, but should work fine for just about any other .gba game (except the script editor).
