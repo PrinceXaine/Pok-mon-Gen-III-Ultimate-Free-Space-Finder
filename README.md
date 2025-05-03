@@ -2,27 +2,51 @@
 Pokémon Gen III (Fire Red) Hex Editor, Free Space Finder and Script Generator (WIP)
 ![image](https://github.com/user-attachments/assets/56ba22f0-cb6b-4bb8-be1f-b0ac9891975a)
 
-This is a Pokémon Gen III Hex Viewer and Free Space Finder written in Python. 
-I got annoyed when I was trying to work on my Fire Red hack and the tools to find a free offset are relatively barebones and don't really offer a way of viewing the offsets you're editing directly.
+>> Newest Update: Added viewport buffering and significantly increased the loading speed of the application.
+![image](https://github.com/user-attachments/assets/8aa0bdd5-cc4d-4081-a6bc-e1b252cba7da)
 
-# What this program offers:
-1. The ability to SEE the offsets you are editing in real time.
-2. The ability to manually search offsets for free data.
+# ABOUT
+This is a Pokémon Gen III Hex Viewer and Free Space Finder written in Python. 
+> Provides the user with a free space finder that doesn't require closing other applications.
+> 
+> The ability to see, calculate and modify offsets in real time.
+> 
+> Provides the user with an easy way to free up space by erasing offset data no longer used by the ROM.
+
+# WHAT THIS PROGRAM OFFERS
+1. The ability to SEE the offsets you are editing in real time via a Hex Editor.
+2. The ability to manually search offsets for free data if needed.
 3. Automatically jumps to the offset the program has designated as "Free" so you can verify the data is free and not in critical space.
+
+![image](https://github.com/user-attachments/assets/65a027ce-a929-4508-9ecf-79ecd34c60a0)
+
+
 4. When free space is found, it will also give you the ending offset:   
 ![image](https://github.com/user-attachments/assets/21aec4c4-d9eb-413e-9767-4b1f864dacf7)
-5. If for whatever reason you're not using the program to find free space for you, you can also use the calculator in the "tools" menu to enter in whatever offset another program has designated for you, input a byte size and it will return where the offset ends. You can use this data to manually search and see if it doesn't end in free space.
 
-![image](https://github.com/user-attachments/assets/954aaf5e-53a4-4c23-a6c2-acfc15dc2f15)
-![image](https://github.com/user-attachments/assets/02669d12-224f-4688-8e2b-56873f889f24)
+5. Using the "Offset Calculator" in tools, you can:
 
-6. You can calculate the difference between two offsets.
+   5a. Calculate the offset end location to view if the space is free or used.
+
+   ![image](https://github.com/user-attachments/assets/36d88da0-70fe-44a2-8a3a-9a8ec13ffeee)
+
+   5b. Enter a known range to calculate the number of bytes and if the range is free.   
+
+   ![image](https://github.com/user-attachments/assets/2b7583be-b183-4f4b-a40f-3cf7a15c8592)
+
+   5c. Comes with a Hex to Decimal or Decimal to Hex converter (same as free space finder)
+
+   ![image](https://github.com/user-attachments/assets/e16c2fd0-8a3f-43e3-a0f3-04f7c5632347)
+
+7. Using the "Erase Offset Range" in tools, you can:
    
-![image](https://github.com/user-attachments/assets/97f7e28a-a566-4dc9-988b-8dd5c6cecb4e)
+   6a. By Offset Range -> Declare a specific range between start and end offsets to fill with FF/00.
 
-7. The dropdown (present on the main screen and in the offset calculator) allow you to change the leading characters of your offset (00, 0x, $).
-  
-![image](https://github.com/user-attachments/assets/10b8801e-c196-4f00-ab38-c95bc77dc0fa)
+   ![image](https://github.com/user-attachments/assets/f1709ed1-c9af-42d1-b2d8-053f9ec807f0)
+
+   6b. By Byte Count -> Declare a number of bytes from the start offset to fill with FF/00.
+
+   ![image](https://github.com/user-attachments/assets/d92631b2-ed3d-4741-b43a-2810d21b416d)
 
 
 Script Editor Features:
