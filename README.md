@@ -17,7 +17,7 @@ This is a Pokémon Gen III Hex Viewer and Free Space Finder written in Python.
 2. The ability to manually search offsets for free data if needed.
 3. Automatically jumps to the offset the program has designated as "Free" so you can verify the data is free and not in critical space.
 
-![image](https://github.com/user-attachments/assets/65a027ce-a929-4508-9ecf-79ecd34c60a0)
+![image](https://github.com/user-attachments/assets/f7cece80-b5af-44c6-b8ac-1214d2508cd1)
 
 
 4. When free space is found, it will also give you data: 
