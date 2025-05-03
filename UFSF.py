@@ -126,16 +126,22 @@ def on_hex_cursor_move(event):
         if byte_pos > 15:  # Out of range
             return
             
-        offset = (line * 16) + byte_pos
+        # Calculate the actual file offset accounting for virtual rendering
+        actual_line = current_view_start + line
+        offset = (actual_line * 16) + byte_pos
 
-        # Update offset display
+        # Update both offset displays with the same value
         fmt = offset_format_var.get()
         if fmt == "0x":
-            start_offset_var.set(f"0x{offset:X}")
+            formatted_offset = f"0x{offset:X}"
         elif fmt == "$":
-            start_offset_var.set(f"${offset:X}")
+            formatted_offset = f"${offset:X}"
         else:
-            start_offset_var.set(str(offset))
+            formatted_offset = str(offset)
+            
+        # Update both fields
+        start_offset_var.set(formatted_offset)
+        search_offset_var.set(formatted_offset)
         
         # Highlight the byte
         hex_display.tag_remove("highlight", "1.0", "end")
@@ -502,7 +508,7 @@ def is_range_free(start, size, check_byte):
     return rom_data[start:start+size] == block
 
 def search_free_space():
-    """Find a block of free space in ROM"""
+    """Find a block of free space in ROM and provide detailed information"""
     global rom_data
     if not rom_data:
         messagebox.showerror("Error", "Please load a ROM first.")
@@ -512,35 +518,89 @@ def search_free_space():
         fmt = offset_format_var.get()
         start_offset = parse_offset(start_offset_var.get(), fmt)
         needed_size = int(size_var.get())
+        skip_interval = int(skip_interval_var.get()) if skip_interval_var.get() else 0
         selected_type = search_type.get()
         check_val = 0xFF if selected_type == "FF" else 0x00
     except ValueError as e:
         messagebox.showerror("Error", f"Offset error: {e}")
         return
 
-    block = bytes([check_val] * needed_size)
-    for i in range(start_offset, len(rom_data) - needed_size + 1):
-        if rom_data[i:i + needed_size] == block:
-            result = (
-                f"Free space found (0x{check_val:02X}):\n"
-                f"Start: 0x{i:06X}\n"
-                f"End: 0x{i + needed_size - 1:06X}"
-            )
-            fs_output.delete("1.0", tk.END)
-            fs_output.insert(tk.END, result)
-            fmt = offset_format_var.get()
-            if fmt == "0x":
-                search_offset_var.set(f"0x{i:06X}")
-            elif fmt == "$":
-                search_offset_var.set(f"${i:06X}")
-            else:
-                search_offset_var.set(str(i))
-
-            scroll_to_offset()
-            return
-
     fs_output.delete("1.0", tk.END)
-    fs_output.insert(tk.END, f"No free space found (0x{check_val:02X}).")
+    fs_output.insert(tk.END, f"Searching for {needed_size} bytes of 0x{check_val:02X}...\n")
+    fs_output.update()
+
+    # Find the free space
+    found = False
+    for i in range(start_offset, len(rom_data) - needed_size - skip_interval + 1):
+        # Check if block starts with our search value
+        if rom_data[i] == check_val:
+            # Count consecutive bytes of our search value
+            j = i
+            while j < len(rom_data) and rom_data[j] == check_val:
+                j += 1
+            
+            # Calculate block size
+            block_size = j - i
+            
+            # If block is large enough (including skip interval)
+            if block_size >= needed_size + skip_interval:
+                found = True
+                
+                # Find where the next non-free block starts
+                next_block_start = j
+                
+                # Find the next free block after this one
+                next_free_start = None
+                for k in range(j, min(len(rom_data), j + 1000)):  # Look ahead a bit more
+                    if rom_data[k] == check_val:
+                        # Count consecutive free bytes
+                        consecutive = 1
+                        while k + consecutive < len(rom_data) and rom_data[k + consecutive] == check_val:
+                            consecutive += 1
+                        if consecutive >= needed_size:  # Only report if it's a usable block
+                            next_free_start = k
+                            break
+                
+                # Format the results with detailed information
+                result = (
+                    f"Start: 0x{i:X}\n"
+                    f"End: 0x{i + needed_size - 1 + skip_interval:X}\n"
+                    f"Size requested: {needed_size} bytes\n"
+                    f"Skip interval: {skip_interval} bytes\n"
+                    f"Total allocation: {needed_size + skip_interval} bytes\n"
+                    f"Total free block size: {block_size} bytes\n"
+                    f"Remaining in block: {block_size - needed_size - skip_interval} bytes\n"
+                    f"Next available offset: 0x{i + needed_size + skip_interval:X}\n"
+                    f"Block extends to: 0x{j-1:X}\n"
+                )
+                
+                # Add info about the next block of data
+                if next_block_start < len(rom_data):
+                    bytes_until_next_allocated = 0
+                    if next_free_start:
+                        result += f"Next usable free block ({needed_size}+ bytes): 0x{next_free_start:X}\n"
+                        bytes_until_next_allocated = next_free_start - next_block_start
+                        result += f"Bytes of allocated data between: {bytes_until_next_allocated}\n"
+                
+                fs_output.delete("1.0", tk.END)
+                fs_output.insert(tk.END, result)
+                
+                # Update the navigation field for convenience
+                fmt = offset_format_var.get()
+                if fmt == "0x":
+                    search_offset_var.set(f"0x{i:X}")
+                elif fmt == "$":
+                    search_offset_var.set(f"${i:X}")
+                else:
+                    search_offset_var.set(str(i))
+                
+                # Auto-scroll to the found offset
+                scroll_to_offset()
+                return
+    
+    if not found:
+        fs_output.delete("1.0", tk.END)
+        fs_output.insert(tk.END, f"No free space of {needed_size + skip_interval} bytes (0x{check_val:02X}) found starting from offset 0x{start_offset:X}.")
 
 # 2. Replace scroll_to_offset function with this version
 def scroll_to_offset():
@@ -1062,7 +1122,15 @@ def update_dec_from_hex(*args):
 # Create main window
 root = tk.Tk()
 root.title("Pokémon Gen III Ultimate Free Space Finder")
-root.geometry("700x620")
+root.geometry("700x720")
+
+# Format and offset variables - add these right after the Core data variables
+offset_format_var = tk.StringVar(value="0x")
+start_offset_var = tk.StringVar(value="0")
+search_offset_var = tk.StringVar(value="0")
+size_var = tk.StringVar(value="32")
+calc_format_var = tk.StringVar(value="0x")
+search_type = tk.StringVar(value="FF")
 
 # ROM control state management
 rom_controls = []
@@ -1118,58 +1186,95 @@ hex_display.bind("<ButtonRelease>", on_hex_cursor_move)
 hex_display.config(cursor="xterm", takefocus=True)
 
 
-# Free space finder controls
-fs_controls = tk.Frame(frame_hex)
-fs_controls.pack(pady=5)
+# Free space finder panel
+fs_panel = tk.LabelFrame(frame_hex, text="Free Space Finder")
+fs_panel.pack(fill='x', padx=10, pady=5)
 
-# Format and offset variables
-offset_format_var = tk.StringVar(value="0x")
-start_offset_var = tk.StringVar(value="0")
-search_offset_var = tk.StringVar(value="0")
-size_var = tk.StringVar(value="32")
-calc_format_var = tk.StringVar(value="0x")
+fs_controls = tk.Frame(fs_panel)
+fs_controls.pack(pady=5, fill='x')
+
+# Left side - search controls
+search_frame = tk.Frame(fs_controls)
+search_frame.pack(side='left', fill='y', padx=10)
+
+# Format selector
+offset_format_label = tk.Label(search_frame, text="Format:")
+offset_format_label.grid(row=0, column=0, sticky='w', pady=2)
+offset_format_ddl = ttk.Combobox(search_frame, textvariable=offset_format_var, values=["0x", "$", "plain"], width=7, state='readonly')
+offset_format_ddl.grid(row=0, column=1, sticky='w', padx=(0, 10), pady=2)
 
 # Search type selector (FF or 00)
-search_type = tk.StringVar(value="FF")
-search_option_menu = ttk.OptionMenu(fs_controls, search_type, "FF", "FF", "00")
-search_option_menu.grid(row=0, column=0, padx=(10,0))
+type_label = tk.Label(search_frame, text="Search Type:")
+type_label.grid(row=1, column=0, sticky='w', pady=2)
+search_option_menu = ttk.OptionMenu(search_frame, search_type, "FF", "FF", "00")
+search_option_menu.grid(row=1, column=1, sticky='w', padx=(0, 10), pady=2)
 
-# Free space controls layout
-tk.Label(fs_controls, text="Start Offset:").grid(row=0, column=1)
-start_entry = tk.Entry(fs_controls, textvariable=start_offset_var, width=10)
-start_entry.grid(row=0, column=2, padx=20)
+# Start offset input
+start_label = tk.Label(search_frame, text="Start Offset:")
+start_label.grid(row=2, column=0, sticky='w', pady=2)
+start_entry = tk.Entry(search_frame, textvariable=start_offset_var, width=12)
+start_entry.grid(row=2, column=1, sticky='w', padx=(0, 10), pady=2)
 rom_controls.append(start_entry)
 
-offset_format_ddl = ttk.Combobox(fs_controls, textvariable=offset_format_var, 
-                                values=["0x", "$", "plain"], width=7, state='readonly')
-offset_format_ddl.grid(row=1, column=0, sticky='w', padx=10)
-
-tk.Label(fs_controls, text="Free Space Size:").grid(row=1, column=1)
-size_entry = tk.Entry(fs_controls, textvariable=size_var, width=10)
-size_entry.grid(row=1, column=2, padx=20)
+# Size input
+size_label = tk.Label(search_frame, text="Free Space Size:")
+size_label.grid(row=3, column=0, sticky='w', pady=2)
+size_entry = tk.Entry(search_frame, textvariable=size_var, width=12)
+size_entry.grid(row=3, column=1, sticky='w', padx=(0, 10), pady=2)
 rom_controls.append(size_entry)
 
-find_btn = tk.Button(fs_controls, text="Find Free Space", command=search_free_space)
-find_btn.grid(row=0, column=3, padx=0)
+#Skip Interval
+skip_interval_label = tk.Label(search_frame, text="Skip Interval:")
+skip_interval_label.grid(row=4, column=0, sticky='w', pady=2)
+skip_interval_var = tk.StringVar(value="0")
+skip_interval_entry = tk.Entry(search_frame, textvariable=skip_interval_var, width=12)
+skip_interval_entry.grid(row=4, column=1, sticky='w', padx=(0, 10), pady=2)
+rom_controls.append(skip_interval_entry)
+
+# Search button
+find_btn = tk.Button(search_frame, text="Find Free Space", command=search_free_space, bg="#e0e0ff", padx=10)
+find_btn.grid(row=5, column=0, columnspan=2, pady=10)
 rom_controls.append(find_btn)
 
-# Spacer
-tk.Label(fs_controls, text="").grid(row=0, column=5, padx=50)
+# Right side - results area
+results_frame = tk.Frame(fs_controls)
+results_frame.pack(side='right', fill='both', expand=True, padx=10)
+
+# Results output area with label and increased height
+results_label = tk.Label(results_frame, text="Search Results:")
+results_label.pack(anchor='w')
+
+fs_output = scrolledtext.ScrolledText(results_frame, height=8, width=40)
+fs_output.pack(fill='both', expand=True)
+rom_controls.append(fs_output)
+
+# Separator
+separator = ttk.Separator(frame_hex, orient='horizontal')
+separator.pack(fill='x', padx=10, pady=5)
+
+# Offset Navigation panel
+nav_panel = tk.LabelFrame(frame_hex, text="Offset Navigation")
+nav_panel.pack(fill='x', padx=10, pady=5)
+
+nav_controls = tk.Frame(nav_panel)
+nav_controls.pack(pady=5, fill='x', padx=10)
 
 # Offset navigation controls
-tk.Label(fs_controls, text="Offset:").grid(row=0, column=6, padx=30)
-offset_entry = tk.Entry(fs_controls, textvariable=search_offset_var, width=10)
-offset_entry.grid(row=0, column=7, padx=0)
+search_offset_var = tk.StringVar(value="0")
+offset_label = tk.Label(nav_controls, text="Go to Offset:")
+offset_label.pack(side='left', padx=(0, 5))
+
+offset_entry = tk.Entry(nav_controls, textvariable=search_offset_var, width=12)
+offset_entry.pack(side='left', padx=5)
 rom_controls.append(offset_entry)
 
-scroll_btn = tk.Button(fs_controls, text="Scroll to Offset", command=scroll_to_offset)
-scroll_btn.grid(row=1, column=7, padx=0)
+scroll_btn = tk.Button(nav_controls, text="Scroll to Offset", command=scroll_to_offset,
+                      bg="#e0ffe0", padx=10)
+scroll_btn.pack(side='left', padx=5)
 rom_controls.append(scroll_btn)
 
-# Output area for free space finder
-fs_output = scrolledtext.ScrolledText(frame_hex, height=4)
-fs_output.pack(padx=10, pady=5, fill='x')
-rom_controls.append(fs_output)
+# Make hex_display fill the remaining space
+hex_frame.pack(fill='both', expand=True, padx=10, pady=(5, 10))
 
 # Add hex editor tab to notebook
 notebook.add(frame_hex, text="Hex Editor")
@@ -1308,7 +1413,7 @@ entry_offset_b.grid(row=7, column=1, sticky="w")
 tk.Button(container, text="Calculate Bytes Between", command=calculate_difference).grid(row=8, column=0, columnspan=2, pady=(5, 10))
 
 # Dec/Hex converter
-dec_hex_frame = tk.LabelFrame(container, text="Dec/Hex")
+dec_hex_frame = tk.LabelFrame(container, text="Dec/Hex Converter")
 dec_hex_frame.grid(row=9, column=0, columnspan=2, pady=(5,0), sticky="we")
 
 dec_var = tk.StringVar()
