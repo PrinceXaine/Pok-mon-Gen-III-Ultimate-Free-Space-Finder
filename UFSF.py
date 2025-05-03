@@ -1122,7 +1122,7 @@ def update_dec_from_hex(*args):
 # Create main window
 root = tk.Tk()
 root.title("Pokémon Gen III Ultimate Free Space Finder")
-root.geometry("700x720")
+root.geometry("700x750")
 
 # Format and offset variables - add these right after the Core data variables
 offset_format_var = tk.StringVar(value="0x")
