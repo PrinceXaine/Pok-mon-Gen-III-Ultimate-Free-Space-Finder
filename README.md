@@ -1,5 +1,5 @@
 # Pok-mon-Gen-III-Ultimate-Free-Space-Finder
-Pokémon Gen III (Fire Red) Hex Editor, Free Space Finder and Script Generator (WIP)
+Pokémon Gen III Hex Editor, Free Space Finder and Script Generator (WIP)
 ![image](https://github.com/user-attachments/assets/56ba22f0-cb6b-4bb8-be1f-b0ac9891975a)
 
 >> Newest Update: Added viewport buffering and significantly increased the loading speed of the application.
@@ -68,3 +68,6 @@ Script Editor Features:
 # Future Updates:
 1. Working on the script editor.
 2. Bugfixes
+
+# User Notice:
+1. Please note that this tool was built for Pokémon Fire Red, but should work fine for just about any other application (except the script editor).
