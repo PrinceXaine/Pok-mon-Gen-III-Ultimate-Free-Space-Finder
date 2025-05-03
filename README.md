@@ -1,9 +1,8 @@
 # Pok-mon-Gen-III-Ultimate-Free-Space-Finder
 Pokémon Gen III Hex Editor, Free Space Finder and Script Generator (WIP)
-![image](https://github.com/user-attachments/assets/56ba22f0-cb6b-4bb8-be1f-b0ac9891975a)
 
->> Newest Update: Added viewport buffering and significantly increased the loading speed of the application.
-![image](https://github.com/user-attachments/assets/8aa0bdd5-cc4d-4081-a6bc-e1b252cba7da)
+![image](https://github.com/user-attachments/assets/2c0804d8-8b36-4bd5-928b-78e0acda6f4d)
+
 
 # ABOUT
 This is a Pokémon Gen III Hex Viewer and Free Space Finder written in Python. 
@@ -21,8 +20,10 @@ This is a Pokémon Gen III Hex Viewer and Free Space Finder written in Python.
 ![image](https://github.com/user-attachments/assets/65a027ce-a929-4508-9ecf-79ecd34c60a0)
 
 
-4. When free space is found, it will also give you the ending offset:   
-![image](https://github.com/user-attachments/assets/21aec4c4-d9eb-413e-9767-4b1f864dacf7)
+4. When free space is found, it will also give you data: 
+
+![image](https://github.com/user-attachments/assets/788cdc15-83ee-49da-970e-40e646b9f6ec)
+
 
 5. Using the "Offset Calculator" in tools, you can:
 
