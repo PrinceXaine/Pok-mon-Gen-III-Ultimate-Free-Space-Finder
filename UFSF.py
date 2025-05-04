@@ -22,11 +22,14 @@ if os.name == 'nt':
    ctypes.windll.user32.ShowWindow(ctypes.windll.kernel32.GetConsoleWindow(), 0)
 
 # Core data variables
-rom_data = b''
+rom_data_original = b''  # Original data
+rom_data = b''           # Working copy for edits
 rom_path = ''
 species_dict = {}
 item_dict = {}
 flag_dict = {}
+loading_popup = None
+progress_queue = None
 
 # Viewport Buffer
 current_view_start = 0  # First line currently rendered
@@ -235,7 +238,7 @@ def load_last_rom():
 
 def load_rom_threaded(path):
     """Load ROM file with virtual rendering for the hex editor"""
-    global rom_path, total_line_count, current_view_start
+    global rom_path, total_line_count, current_view_start, loading_popup, progress_queue
     loading_popup = Toplevel(root)
     loading_popup.title("Loading ROM")
     loading_popup.geometry("400x160")
@@ -248,10 +251,6 @@ def load_rom_threaded(path):
 
     progress_queue = queue.Queue()
     rom_path = path
-
-    # Determine thread count immediately (outside the worker thread)
-    cpu_count = os.cpu_count() or 4
-    thread_count = max(2, min(cpu_count - 1, 32))
 
     def update_progress_ui():
         """Update UI from progress queue"""
@@ -268,44 +267,10 @@ def load_rom_threaded(path):
             if loading_popup.winfo_exists():
                 loading_popup.after(50, update_progress_ui)
 
-    def determine_optimal_threads():
-        """Determine optimal thread count based on system and ROM size"""
-        # Get CPU count (returns None if indeterminable)
-        cpu_count = os.cpu_count() or 4  # Default to 4 if can't determine
-        
-        # Determine file size to scale appropriately
-        try:
-            file_size = os.path.getsize(path)
-            # For very small ROMs (less than 1MB), fewer threads may be better
-            if file_size < 1024 * 1024:
-                return max(1, min(2, cpu_count))
-            # For moderate ROMs, use about 75% of available cores
-            elif file_size < 8 * 1024 * 1024:
-                return max(2, int(cpu_count * 0.75))
-            # For large ROMs, use nearly all cores, but leave 1-2 for system
-            else:
-                return max(4, cpu_count - 1)
-        except:
-            # If we can't determine, use a conservative approach
-            return max(2, min(8, int(cpu_count * 0.5)))
-
-    def format_hex_chunk(chunk_data, base_offset, result_queue):
-        """Format a chunk of ROM data into hex display lines"""
-        lines = []
-        for i in range(0, len(chunk_data), 16):
-            offset = base_offset + i
-            end = min(i + 16, len(chunk_data))
-            hex_bytes = ' '.join(f'{b:02X}' for b in chunk_data[i:end])
-            hex_bytes = f"{hex_bytes:<47}"
-            ascii_repr = ''.join(chr(b) if 32 <= b <= 126 else '.' for b in chunk_data[i:end])
-            lines.append((offset // 16, f"{hex_bytes}    {ascii_repr}"))
-        result_queue.put(lines)
-
     def load_and_update():
         """Worker thread for loading ROM"""
         import time
-        global rom_data, total_line_count, current_view_start
-
+        global rom_data, rom_data_original, total_line_count, current_view_start 
         load_start_time = time.time()
 
         try:
@@ -325,7 +290,10 @@ def load_rom_threaded(path):
                     percent = int((read_total / file_size) * 100)
                     progress_queue.put(("load", percent, None))
 
-            rom_data = bytes(rom_bytes)
+            # Store both copies of the ROM data
+            rom_data_original = bytes(rom_bytes)  # Store original copy
+            rom_data = bytes(rom_bytes)           # Working copy for edits
+            
             progress_queue.put(("load", 100, "Preparing virtual hex view..."))
             
             # Reset view state
@@ -356,9 +324,12 @@ def load_rom_threaded(path):
             with open("last_rom_path.txt", "w") as f:
                 f.write(path)
 
+    # Start the progress update timer
     update_progress_ui()
+    
+    # Start the loading thread
     threading.Thread(target=load_and_update, daemon=True).start()
-
+    
 def on_virtual_scroll(*args):
     """Handle scrolling in virtual mode"""
     # Handle scrollbar commands
@@ -431,6 +402,8 @@ def render_visible_region():
     
     # Update line numbers for the rendered region
     update_hex_line_numbers_virtual()
+    hex_scroll.set(start, end)
+
 
 def update_hex_line_numbers_virtual():
     """Update line numbers for virtual rendering"""
@@ -466,16 +439,22 @@ def setup_virtual_hex_editor():
     total_line_count = (len(rom_data) + 15) // 16 if rom_data else 0
 
 def save_rom():
-    """Save changes to ROM file with backup"""
-    global rom_data, rom_path
+    global rom_data, rom_data_original, rom_path
     if not rom_data:
         messagebox.showerror("Error", "No ROM loaded.")
         return
-    update_rom_data_from_hex_editor()  # Sync editor to memory
+    
+    # Create backup
     backup_path = rom_path + ".bak"
     shutil.copyfile(rom_path, backup_path)
+    
+    # Save complete working copy
     with open(rom_path, 'wb') as f:
         f.write(rom_data)
+    
+    # Update original reference to match saved state
+    rom_data_original = bytes(rom_data)
+    
     messagebox.showinfo("ROM Saved", f"ROM saved and backup created at:\n{backup_path}")
 
 #----------------------------------------------------------------------
