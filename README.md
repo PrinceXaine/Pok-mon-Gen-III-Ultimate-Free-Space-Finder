@@ -66,6 +66,11 @@ Script Editor Features:
 # Requirements:
 1. You will need to install Python.
 
+# Known Bugs:
+1. Issues with Tkinter emulating control positions.
+
+    > Due to how the script handles loading in the ROM, some of the controls used to navigate the hex viewer desync. You can always jump accurately to an offset, but until I am able to fix this issue, I recommend just being careful with what you do in the editor after scrolling, using the mouse wheel, etc. Before I updated the script, it took between 7-10 seconds to load after pressing the "open ROM" button. Now it takes a fraction of a second. I am actively working to resolve this issue but it's proven to be challenging and I do not have an ETA as of yet. ALWAYS jump to an offset before editing using the "edit offset" button.
+
 # Future Updates:
 1. Working on the script editor.
 2. Bugfixes
